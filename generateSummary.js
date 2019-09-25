@@ -11,25 +11,26 @@ function main() {
   let outputWorkbook = new Excel.Workbook();
 
   let promises = [];
-  console.log("Reading file:", filename);
+  console.log("Reading file:", filename, '\n');
   readExcelFile(inputWorkbook, filename)
     .then(function() {
       let sheetNames = getWorksheetNames(inputWorkbook);
       _.each(sheetNames, function(inputSheet) {
         let worksheet = getExcelSheet(inputWorkbook, inputSheet);
         let sheetObj = getWorksheetObj(worksheet, 1, 4);
-        console.log('Sheet Object:')
-        console.log(sheetObj);
         allDataArr.push(sheetObj);
         let sheetName = inputSheet + ' SUMMARY';
         addExcelSheetToWorkbook(outputWorkbook, sheetObj, sheetName);
+        console.log(sheetName + 'added to workbook.')
       });
       let mergedTotalObj = createTotalDataObj(allDataArr);
-      // console.log(mergedTotalObj);
       addExcelSheetToWorkbook(outputWorkbook, mergedTotalObj, "SUMMARY TOTAL");
-
-      outputWorkbook.xlsx.writeFile('Retail_Summary.xlsx')
+      console.log('SUMMARY TOTAL added to workbook.\n')
+      let outputFileName = 'Retail_Summary.xlsx'
+      outputWorkbook.xlsx.writeFile(outputFileName)
         .then(function() {
+          console.log('Output written to', outputFileName);
+
           console.log('\nDONE');
         });
     });
