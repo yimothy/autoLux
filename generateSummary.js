@@ -11,23 +11,26 @@ function main() {
   let outputWorkbook = new Excel.Workbook();
 
   let promises = [];
-
+  console.log("Reading file:", filename);
   readExcelFile(inputWorkbook, filename)
     .then(function() {
       let sheetNames = getWorksheetNames(inputWorkbook);
-      sheetNames = ['raw1', 'raw2'];
       _.each(sheetNames, function(inputSheet) {
         let worksheet = getExcelSheet(inputWorkbook, inputSheet);
         let sheetObj = getWorksheetObj(worksheet, 1, 4);
+        console.log('Sheet Object:')
+        console.log(sheetObj);
         allDataArr.push(sheetObj);
         let sheetName = inputSheet + ' SUMMARY';
         addExcelSheetToWorkbook(outputWorkbook, sheetObj, sheetName);
       });
       let mergedTotalObj = createTotalDataObj(allDataArr);
-      return;
+      // console.log(mergedTotalObj);
+      addExcelSheetToWorkbook(outputWorkbook, mergedTotalObj, "SUMMARY TOTAL");
+
       outputWorkbook.xlsx.writeFile('Retail_Summary.xlsx')
         .then(function() {
-          console.log('DONE');
+          console.log('\nDONE');
         });
     });
 }
@@ -176,5 +179,20 @@ function _createRowObj(dataObj, colHeaders, isTotalRow) {
   return rowObj;
 }
 function createTotalDataObj(allDataArr) {
-  console.log(allDataArr);
+  // mergeWith mutates object
+  return _.reduce(allDataArr, function(acc, curr) {
+    return _.mergeWith(acc, curr, mergeWithHelper);
+  });
+}
+
+function mergeWithHelper(objVal, srcVal, key) {
+  if(key === "revenues") {
+    for(let month in objVal) {
+      if(srcVal[month] === undefined) {
+        srcVal[month] = 0;
+      }
+      objVal[month] += srcVal[month];
+    }
+    return objVal;
+  }
 }
