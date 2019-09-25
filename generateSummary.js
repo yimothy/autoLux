@@ -6,23 +6,25 @@ main();
 function main() {
   const clArgs = getArgs();
   let filename = clArgs[0];
-  let inputSheets = [".COM US", "b&m us"];
   let allDataArr = [];
-  // let inputSheets = [".COM US"];
+  let inputWorkbook = new Excel.Workbook();
   let outputWorkbook = new Excel.Workbook();
+
   let promises = [];
-  _.each(inputSheets, function(inputSheet) {
-    let promise = getExcel(filename, inputSheet)
-      .then(function(worksheet) {
+
+  readExcelFile(inputWorkbook, filename)
+    .then(function() {
+      let sheetNames = getWorksheetNames(inputWorkbook);
+      sheetNames = ['raw1', 'raw2'];
+      _.each(sheetNames, function(inputSheet) {
+        let worksheet = getExcelSheet(inputWorkbook, inputSheet);
         let sheetObj = getWorksheetObj(worksheet, 1, 4);
         allDataArr.push(sheetObj);
         let sheetName = inputSheet + ' SUMMARY';
         addExcelSheetToWorkbook(outputWorkbook, sheetObj, sheetName);
       });
-      promises.push(promise);
-  });
-  Promise.all(promises)
-    .then(function(values) {
+      let mergedTotalObj = createTotalDataObj(allDataArr);
+      return;
       outputWorkbook.xlsx.writeFile('Retail_Summary.xlsx')
         .then(function() {
           console.log('DONE');
@@ -34,18 +36,24 @@ function getArgs() {
   return process.argv.slice(2);
 }
 
-function getExcel(filename, worksheetName) {
-  var workbook = new Excel.Workbook();
-  return workbook.xlsx.readFile(filename)
-  .then(function() {
-    let worksheet;
-    if(worksheetName) {
-      worksheet = _.find(workbook.worksheets, function(sheetObj) {
+function readExcelFile(workbook, filename) {
+  return workbook.xlsx.readFile(filename);
+}
+
+function getWorksheetNames(workbook) {
+  return _.map(workbook.worksheets, function(sheetObj) {
+    return sheetObj.name;
+  });
+}
+
+function getExcelSheet(workbook, worksheetName) {
+  let sheet = _.find(workbook.worksheets, function(sheetObj) {
         return sheetObj.name === worksheetName;
       });
-    }
-    return worksheet ? worksheet : workbook;
-  });
+  if(sheet) {
+    return sheet;
+  }
+  console.log('Sheet not found');
 }
 
 function getWorksheetObj(worksheet, colStartIdx, rowStartIdx) {
@@ -166,4 +174,7 @@ function _createRowObj(dataObj, colHeaders, isTotalRow) {
     }
   });
   return rowObj;
+}
+function createTotalDataObj(allDataArr) {
+  console.log(allDataArr);
 }
