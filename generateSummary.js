@@ -78,7 +78,9 @@ function getWorksheetObj(worksheet, colStartIdx, rowStartIdx) {
 }
 
 function addRevenuesToFranchise(franchiseObj, row) {
-  let startColIdx = 37+1;
+  let priceCol = "H";
+  let price = row.getCell(priceCol);
+  let startColIdx = 13; // TODO: dont hardcode this
   for(var idx = startColIdx; idx < startColIdx+12; idx++) {
     let val = row.getCell(idx).value;
     if(val !== null) {
@@ -86,11 +88,11 @@ function addRevenuesToFranchise(franchiseObj, row) {
     } else {
       val = 0;
     }
-    let revIdx = idx-38;
+    let revIdx = idx-startColIdx;
     if(franchiseObj.revenues[revIdx] == undefined) {
       franchiseObj.revenues[revIdx] = 0;
     }
-    franchiseObj.revenues[revIdx] += val;
+    franchiseObj.revenues[revIdx] += (price*val);
   }
   // TODO: Total up revenues in each category in this function
   // console.log(franchiseObj);
@@ -98,12 +100,13 @@ function addRevenuesToFranchise(franchiseObj, row) {
 
 function addExcelSheetToWorkbook(workbook, sheetObj, sheetName) {
   // console.log(sheetObj);
-  let sheet = workbook.addWorksheet(sheetObj.inputSheetName);
+  let sheet = workbook.addWorksheet(sheetName);
+    // TODO: get these from input file and make dynamic
   let colHeaders = ["products", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
   sheet.columns = getSheetColumns(colHeaders);
   _sumCategories(sheetObj);
   _addCategories(sheet, sheetObj, colHeaders);
-  // TODO: get these from input file
+
   // console.log(sheet.columns);
 }
 
@@ -157,14 +160,6 @@ function _createRowObj(dataObj, colHeaders, isTotalRow) {
   _.each(colHeaders, function(header, idx) {
     if(idx === 0) {
       rowObj[header] = dataObj.name;
-      // if(isTotalRow) {
-      //   console.log('alignment');
-      //   rowObj.style = {
-      //     fill: {
-      //       bgColor:{argb:'FF0000FF'}
-      //     }
-      //   }
-      // }
     } else {
       let revId = idx-1; // TODO: make the rev header keys months, not idx
       rowObj[header] = dataObj.revenues[revId];
